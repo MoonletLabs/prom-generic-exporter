@@ -1,42 +1,18 @@
-name: Trivy Scan
+name: Trivy Security Scan
+
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  actions: write
 
 jobs:
-  trivy-scan:
-    name: Trivy Scan
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Create templates directory
-        run: mkdir -p .github/templates
-
-      - name: Download HTML template
-        run: wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl -O .github/templates/html.tpl
-
-      - name: Run Trivy vulnerability scanner in repo mode Output
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          scan-type: 'fs'
-          ignore-unfixed: true
-          format: 'table'                
-          severity: 'HIGH,CRITICAL'
-          
-      - name: Run Trivy vulnerability scanner in repo mode
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          scan-type: 'fs'
-          ignore-unfixed: true
-          format: 'template'
-          template: "@.github/templates/html.tpl"
-          output: 'trivy-report.html'
-          severity: 'HIGH,CRITICAL'
-
-      - name: Upload HTML report as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: trivy-vulnerability-report
-          path: trivy-report.html
-      
+  security-scan:
+    uses: Moonlet/organization-workflows/.github/workflows/trivy-scan.yml@v1-trivy-scan
