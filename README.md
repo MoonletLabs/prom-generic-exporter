@@ -313,3 +313,4 @@ module.exports = {
 ```
 
 These helpers can be used in config as: `$helpers.percent(...)` and `$helpers.otherExample(...)`
+
