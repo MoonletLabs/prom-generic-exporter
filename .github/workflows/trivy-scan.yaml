@@ -1,5 +1,9 @@
 name: Trivy Security Scan
 
+# Inline copy of MoonletLabs/organization-workflows/.github/workflows/trivy-scan.yml.
+# This repo is public and cannot call reusable workflows from that private repo,
+# so keep action versions in sync with it by hand.
+
 on:
   workflow_dispatch:
   push:
@@ -20,10 +24,10 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.34.2
+        uses: aquasecurity/trivy-action@v0.36.0
         continue-on-error: true
         env:
           TRIVY_DISABLE_VEX_NOTICE: 'true'
