@@ -13,6 +13,12 @@ on:
           - minor
           - patch
 
+# main is protected (changes only through pull requests), so the version bump is
+# opened as a PR instead of being pushed to main.
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -60,11 +66,7 @@ jobs:
           docker push krisboit/prom-generic-exporter:${VERSION}
 
           echo "APP_TAG=${APP_NAME}-v${VERSION}" >> $GITHUB_ENV
-
-      - uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: Version bump
-          file_pattern: package.json
+          echo "NEW_VERSION=${VERSION}" >> $GITHUB_ENV
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
@@ -74,3 +76,12 @@ jobs:
           tag: ${{ env.APP_TAG }}
           overwrite: true
           file_glob: true
+
+      - name: Open version bump PR
+        uses: peter-evans/create-pull-request@v7
+        with:
+          add-paths: package.json
+          branch: release/v${{ env.NEW_VERSION }}
+          commit-message: Version bump to ${{ env.NEW_VERSION }}
+          title: Version bump to ${{ env.NEW_VERSION }}
+          body: Automated version bump after releasing ${{ env.APP_TAG }}.
