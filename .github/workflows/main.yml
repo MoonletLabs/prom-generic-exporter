@@ -43,7 +43,7 @@ jobs:
           pnpm run build
           cd build
           pnpm install --prod
-          pnpm add node-linux-x64@lts
+          pnpm add node-linux-x64@22
           chmod +x prom-generic-exporter
           VERSION=$(node -e "console.log(require('./package.json').version)")
           APP_NAME=$(node -e "console.log(require('./package.json').name)")
