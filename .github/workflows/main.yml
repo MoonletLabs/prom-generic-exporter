@@ -13,6 +13,12 @@ on:
           - minor
           - patch
 
+# main is protected (changes only through pull requests), so the workflow never
+# commits to it. The next version is derived from the latest GitHub release
+# instead of the version stored in package.json.
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -37,8 +43,11 @@ jobs:
         id: build
         env:
           INPUT_VERSION: ${{ github.event.inputs.version }}
+          GH_TOKEN: ${{ github.token }}
           # ln -s $PWD/node_modules/.pnpm $PWD/packages/agent/node_modules/.pnpm
         run: |
+          LATEST_TAG=$(gh api repos/${{ github.repository }}/releases/latest --jq .tag_name)
+          npm version --commit-hooks false --git-tag-version false --allow-same-version "${LATEST_TAG##*-v}"
           npm version --commit-hooks false --git-tag-version false $INPUT_VERSION
           pnpm run build
           cd build
@@ -60,11 +69,6 @@ jobs:
           docker push krisboit/prom-generic-exporter:${VERSION}
 
           echo "APP_TAG=${APP_NAME}-v${VERSION}" >> $GITHUB_ENV
-
-      - uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: Version bump
-          file_pattern: package.json
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
