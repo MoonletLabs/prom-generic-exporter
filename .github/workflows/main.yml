@@ -13,11 +13,11 @@ on:
           - minor
           - patch
 
-# main is protected (changes only through pull requests), so the version bump is
-# opened as a PR instead of being pushed to main.
+# main is protected (changes only through pull requests), so the workflow never
+# commits to it. The next version is derived from the latest GitHub release
+# instead of the version stored in package.json.
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
   build:
@@ -43,8 +43,11 @@ jobs:
         id: build
         env:
           INPUT_VERSION: ${{ github.event.inputs.version }}
+          GH_TOKEN: ${{ github.token }}
           # ln -s $PWD/node_modules/.pnpm $PWD/packages/agent/node_modules/.pnpm
         run: |
+          LATEST_TAG=$(gh api repos/${{ github.repository }}/releases/latest --jq .tag_name)
+          npm version --commit-hooks false --git-tag-version false --allow-same-version "${LATEST_TAG##*-v}"
           npm version --commit-hooks false --git-tag-version false $INPUT_VERSION
           pnpm run build
           cd build
@@ -66,7 +69,6 @@ jobs:
           docker push krisboit/prom-generic-exporter:${VERSION}
 
           echo "APP_TAG=${APP_NAME}-v${VERSION}" >> $GITHUB_ENV
-          echo "NEW_VERSION=${VERSION}" >> $GITHUB_ENV
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
@@ -76,12 +78,3 @@ jobs:
           tag: ${{ env.APP_TAG }}
           overwrite: true
           file_glob: true
-
-      - name: Open version bump PR
-        uses: peter-evans/create-pull-request@v7
-        with:
-          add-paths: package.json
-          branch: release/v${{ env.NEW_VERSION }}
-          commit-message: Version bump to ${{ env.NEW_VERSION }}
-          title: Version bump to ${{ env.NEW_VERSION }}
-          body: Automated version bump after releasing ${{ env.APP_TAG }}.
